@@ -1,0 +1,24 @@
+# Credentials — NEVER commit
+.env
+*.env
+.env.example
+
+# Large transformer weights (>100MB GitHub limit — downloaded from HuggingFace at runtime)
+*.safetensors
+*.bin
+
+# Python
+__pycache__/
+*.py[cod]
+.ipynb_checkpoints/
+venv/
+*.egg-info/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# NOTE: data/raw/ and data/processed/ ARE committed — CSV files are small (<5MB)
+# NOTE: images/ is committed — plots are committed for README display
+# NOTE: models/*.pkl and models/*.joblib are tracked (needed for inference)
+# NOTE: reports/ CSVs and PDF are tracked
