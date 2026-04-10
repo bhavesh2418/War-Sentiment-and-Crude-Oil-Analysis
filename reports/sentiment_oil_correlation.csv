@@ -1,0 +1,5 @@
+Model,Market,Pearson_r,Interpretation
+VADER,Brent,-0.4646,Moderate negative correlation
+VADER,WTI,-0.484,Moderate negative correlation
+RoBERTa,Brent,-0.2962,Weak negative correlation
+RoBERTa,WTI,-0.277,Weak negative correlation
