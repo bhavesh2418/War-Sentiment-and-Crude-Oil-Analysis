@@ -4,7 +4,7 @@
 ![NLP](https://img.shields.io/badge/NLP-VADER%20%2B%20RoBERTa-green)
 ![Status](https://img.shields.io/badge/Status-Complete-brightgreen)
 
-**Does war-related media sentiment predict crude oil price movements? VADER says yes (r = +0.65). RoBERTa says no — and that gap is the most important finding.**
+**Does war-related media sentiment correlate with crude oil price movements? VADER shows moderate negative correlation (r = -0.46). RoBERTa shows weak correlation (r = -0.30) — and the gap explains how vocabulary differs from context.**
 
 ---
 
@@ -24,7 +24,7 @@
 
 ## Problem Statement
 
-This project investigates whether media sentiment about the US–Israel–Iran conflict correlates with Brent and WTI crude oil prices. Data comes from Google News RSS and NewsAPI (no paid sources), processed through two complementary NLP pipelines — VADER and Twitter-RoBERTa — then correlated against commodity futures via yfinance.
+This project investigates whether media sentiment about the US–Israel–Iran conflict correlates with Brent and WTI crude oil prices. Data is collected entirely from free sources — Google News RSS and NewsAPI — then processed through two complementary NLP pipelines: VADER (rule-based lexicon scoring) and CardiffNLP Twitter-RoBERTa (transformer-based contextual analysis). Daily sentiment aggregates are correlated against commodity futures prices via yfinance.
 
 ---
 
@@ -46,7 +46,7 @@ This project investigates whether media sentiment about the US–Israel–Iran c
 | Brent_Close | float | Brent crude daily closing price (USD) |
 | WTI_Close | float | WTI crude daily closing price (USD) |
 
-**Sources:** Google News RSS + NewsAPI | **Period:** Nov 2025 – Apr 2026 | **Articles:** ~796 (after deduplication)
+**Source:** Google News RSS (feedparser) | **Period:** Nov 2025 – Apr 2026 | **Articles:** 314 (after deduplication) | **Trading days:** 123
 
 ---
 
@@ -55,17 +55,17 @@ This project investigates whether media sentiment about the US–Israel–Iran c
 ```
 War-Sentiment-and-Crude-Oil-Analysis/
 ├── data/
-│   ├── raw/               # news_raw.csv, crude_oil_prices.csv
-│   └── processed/         # news_processed.csv
+│   ├── raw/               # news_raw.csv (314 articles), crude_oil_prices.csv (123 days)
+│   └── processed/         # news_processed.csv (314 cleaned articles)
 ├── notebooks/             # 6 Jupyter notebooks (one per phase)
 ├── src/                   # Python source modules
 │   ├── config.py          # All paths, constants, model params
 │   ├── data_collector.py  # Google News RSS + NewsAPI + yfinance
-│   ├── preprocessing.py   # Text cleaning pipeline
+│   ├── preprocessing.py   # Text cleaning pipeline (8 steps)
 │   ├── sentiment.py       # VADER + RoBERTa + daily aggregation
 │   └── visualize.py       # All 13 plot functions
-├── models/                # RoBERTa tokenizer/config (downloaded once)
-├── images/                # All plots — committed for README display
+├── models/                # RoBERTa tokenizer/config (cached locally)
+├── images/                # All 13 plots — committed for README display
 ├── reports/               # Results CSVs + PDF report
 ├── scripts/
 │   ├── collect_data.py    # Standalone data refresh
@@ -86,6 +86,8 @@ Google News RSS  +  NewsAPI  +  yfinance
           news_raw.csv     crude_oil_prices.csv
                |
      Text Cleaning (8 steps)
+     URL strip, HTML strip, tokenize,
+     stopwords, lemmatize
                |
      news_processed.csv
           /         \
@@ -114,6 +116,12 @@ Google News RSS  +  NewsAPI  +  yfinance
 ### Source Distribution
 ![Source Distribution](images/02_source_distribution.png)
 
+### Keyword Distribution
+![Keyword Distribution](images/03_keyword_distribution.png)
+
+### Token Length Distribution
+![Token Length](images/04_token_length_distribution.png)
+
 ### Word Cloud — All Articles
 ![Word Cloud All](images/06_wordcloud_all.png)
 
@@ -124,13 +132,21 @@ Google News RSS  +  NewsAPI  +  yfinance
 ### Sentiment Distribution (VADER vs RoBERTa)
 ![Sentiment Distribution](images/07_sentiment_distribution.png)
 
-The key finding: **VADER classifies ~68% of articles as Negative**. RoBERTa classifies **~63% as Neutral**. Most war journalism maintains factual, neutral tone — context-aware RoBERTa sees this, but misses the vocabulary signals traders respond to.
+| Model | Negative | Neutral | Positive |
+|---|---|---|---|
+| VADER | 60.8% (191) | 20.7% (65) | 18.5% (58) |
+| RoBERTa | 34.4% (108) | 64.3% (202) | 1.3% (4) |
+
+**Key finding:** VADER classifies 60.8% of war articles as Negative. RoBERTa classifies 64.3% as Neutral. The same text — completely different readings. RoBERTa understands that factual journalism about war maintains a neutral reporting tone; VADER sees the vocabulary ("sanctions", "conflict", "attack") and scores it negative.
 
 ### Sentiment Over Time
 ![Sentiment Over Time](images/08_sentiment_over_time.png)
 
 ### Word Clouds by Sentiment
 ![Word Cloud by Sentiment](images/05_wordcloud_by_sentiment.png)
+
+### Model Agreement
+![Model Agreement](images/12_model_agreement.png)
 
 ---
 
@@ -140,10 +156,12 @@ The key finding: **VADER classifies ~68% of articles as Negative**. RoBERTa clas
 
 | Model | Market | Pearson r | Interpretation |
 |---|---|---|---|
-| VADER | Brent | **+0.6473** | Strong positive correlation |
-| VADER | WTI | **+0.5891** | Moderate positive correlation |
-| RoBERTa | Brent | +0.0642 | Weak positive correlation |
-| RoBERTa | WTI | +0.0521 | Weak positive correlation |
+| VADER | Brent | **-0.4646** | Moderate negative correlation |
+| VADER | WTI | **-0.4840** | Moderate negative correlation |
+| RoBERTa | Brent | -0.2962 | Weak negative correlation |
+| RoBERTa | WTI | -0.2770 | Weak negative correlation |
+
+*Negative correlation means: when VADER compound is more positive (lower negativity intensity), oil prices tend to be higher — consistent with easing geopolitical tension → higher prices or conflict-driven demand uncertainty → price suppression.*
 
 ### Sentiment vs Brent Price
 ![Sentiment vs Oil](images/09_sentiment_vs_oil_price.png)
@@ -154,19 +172,17 @@ The key finding: **VADER classifies ~68% of articles as Negative**. RoBERTa clas
 ### 7-Day Rolling Correlation
 ![Rolling Correlation](images/11_rolling_correlation.png)
 
-### Model Agreement
-![Model Agreement](images/12_model_agreement.png)
-
 ---
 
 ## Key Insights
 
-1. **VADER r = +0.647 with Brent crude** — vocabulary-level negativity intensity tracks oil price movements
-2. **RoBERTa r = +0.064** — transformer models underweight raw headline language markets respond to
-3. **"VADER reacts to vocabulary. RoBERTa understands context."** — For commodity correlation, vocabulary wins
-4. Article volume spikes precede Brent price volatility by 1-2 days
-5. Rolling correlation is strongest during escalation events, weakest during diplomatic pauses
-6. Free data sources (RSS + NewsAPI + yfinance) are sufficient for meaningful geopolitical NLP research
+1. **VADER r = -0.46 with Brent crude** — vocabulary-level negativity has moderate inverse relationship with oil prices
+2. **RoBERTa r = -0.30** — transformer models still detect signal, but weaker due to neutral classification bias
+3. **VADER: 60.8% Negative vs RoBERTa: 64.3% Neutral** — same articles, radically different sentiment profiles; context-aware models neutralize the very vocabulary signals that price models need
+4. **314 articles from RSS alone** — Google News RSS is a sufficient free data source without paid APIs
+5. **43 matched trading days** — weekend/holiday gaps limit correlation sample size; forward-filling oil prices could expand this
+6. Rolling 7-day correlation shows time-varying strength — signal strengthens during escalation events
+7. The negative correlation direction means market participants may be pricing in *demand reduction* from conflict rather than supply disruption premium
 
 ---
 
@@ -181,22 +197,22 @@ cd War-Sentiment-and-Crude-Oil-Analysis
 pip install -r requirements.txt
 
 # 3. Set credentials — create a .env file:
-#    NEWS_API_KEY=your_key_here
+#    NEWS_API_KEY=your_key_here  (optional — RSS works without it)
 
-# 4. Collect data
-python scripts/collect_data.py
-
-# 5. Run full pipeline
+# 4. Run full pipeline
 python main.py
 
-# 6. VADER-only (faster, no GPU needed)
+# 5. VADER-only (faster, no GPU needed)
 python main.py --skip-roberta
 
-# 7. Use cached data
+# 6. Use cached data (skip re-collection)
 python main.py --use-cache
 
-# 8. Generate PDF report
+# 7. Generate PDF report
 python scripts/generate_pdf.py
+
+# 8. Refresh data only
+python scripts/collect_data.py
 ```
 
 ---
@@ -218,4 +234,4 @@ python scripts/generate_pdf.py
 | seaborn | 0.13.2 | Statistical plots |
 | wordcloud | 1.9.6 | Word cloud generation |
 | fpdf2 | 2.8.7 | PDF report generation |
-| python-dotenv | 1.1.0 | Environment variable loading |
+| python-dotenv | 1.2.2 | Environment variable loading |
